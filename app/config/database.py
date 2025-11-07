@@ -1,22 +1,48 @@
 # Configuración de la base de datos
-from app.core.extensions import db
+# from app.core.extensions import db
 
-def init_database(app):
-    """
-    Inicializar base de datos con datos de prueba
-    """
-    with app.app_context():
-        # Crear todas las tablas
-        db.create_all()
+# def init_database(app):
+#     """
+#     Inicializar base de datos con datos de prueba
+#     """
+#     with app.app_context():
+#         # Crear todas las tablas
+#         db.create_all()
         
-        print("✅ Base de datos inicializada correctamente")
+#         print("✅ Base de datos inicializada correctamente")
 
-def reset_database(app):
-    """
-    Resetear la base de datos
-    """
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
+# def reset_database(app):
+#     """
+#     Resetear la base de datos
+#     """
+#     with app.app_context():
+#         db.drop_all()
+#         db.create_all()
         
-        print("🔄 Base de datos reseteada correctamente")
+#         print("🔄 Base de datos reseteada correctamente")
+
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# lee DATABASE_URL desde .env si lo tienes, sino cae al valor por defecto
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "mysql+pymysql://root:@127.0.0.1:3306/tabla_incidentes",
+)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+def create_db_and_tables():
+    Base.metadata.create_all(bind=engine)
+
+
+def get_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
