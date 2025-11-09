@@ -32,12 +32,16 @@
 #         log_level="info"
 #     )
 
+# run.py (raíz del proyecto)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import create_db_and_tables
-from app.modules.incidentes import router as incidentes_router
 
-app = FastAPI(title="BRISA API (Prototipo)")
+# Routers
+from app.modules.incidentes.controllers.controllers_auth import router as auth_router
+from app.modules.incidentes.controllers.controllers_incidentes import router as incidentes_router
+
+app = FastAPI(title="BRISA API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,7 +52,9 @@ app.add_middleware(
 )
 
 @app.on_event("startup")
-def on_startup():
+def startup():
     create_db_and_tables()
 
+# Registrar routers
+app.include_router(auth_router)
 app.include_router(incidentes_router)

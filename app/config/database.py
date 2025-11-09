@@ -28,7 +28,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 # lee DATABASE_URL desde .env si lo tienes, sino cae al valor por defecto
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "mysql+pymysql://root:@127.0.0.1:3306/tabla_incidentes",
+    "mysql+pymysql://root:@127.0.0.1:3306/bienestar_estudiantil_",
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
