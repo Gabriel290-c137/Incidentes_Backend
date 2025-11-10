@@ -33,13 +33,12 @@
 #     )
 
 # run.py (raíz del proyecto)
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import create_db_and_tables
 
-# Routers
-from app.modules.incidentes.controllers.controllers_auth import router as auth_router
-from app.modules.incidentes.controllers.controllers_incidentes import router as incidentes_router
+logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="BRISA API")
 
@@ -55,6 +54,16 @@ app.add_middleware(
 def startup():
     create_db_and_tables()
 
-# Registrar routers
+# IMPORTAR routers concretos (no import en package que cause ciclos)
+from app.modules.incidentes.controllers.controllers_auth import router as auth_router
+
+try:
+    from app.modules.incidentes.controllers.controllers_incidentes import router as incidentes_router
+except Exception as e:
+    incidentes_router = None
+    logger.warning("No se encontró router de incidentes o falló import: %s", e)
+
 app.include_router(auth_router)
-app.include_router(incidentes_router)
+if incidentes_router:
+    app.include_router(incidentes_router)
+

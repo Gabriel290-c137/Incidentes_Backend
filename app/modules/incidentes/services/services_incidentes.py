@@ -1,46 +1,64 @@
-# app/modules/incidentes/services/incidentes_service.py
+# app/modules/incidentes/services/services_incidentes.py
 from typing import Optional
 from sqlalchemy.orm import Session
-from app.modules.incidentes.models import models_incidentes
+from app.modules.incidentes.models import models_incidentes as models
 from app.modules.incidentes.dto.dto_incidentes import IncidenteCreate
 from app.modules.incidentes.repositories.repositories_incidentes import IncidenteRepository
+from datetime import datetime
+import json
 
 class IncidenteService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = IncidenteRepository(db)
 
-    def create_incidente(self, incidente_in: IncidenteCreate, creado_por_persona_id: Optional[int] = None) -> models_incidentes.Incidente:
-        antecedentes_text = incidente_in.antecedentes or ""
-        if incidente_in.lugar:
-            antecedentes_text = f"Lugar: {incidente_in.lugar}\n{antecedentes_text}".strip()
-
-        acciones_text = incidente_in.acciones_tomadas or ""
-        if incidente_in.descripcion:
-            acciones_text = f"{incidente_in.descripcion}\n{acciones_text}".strip()
-
-        # Validaciones: estudiantes y situaciones (Pydantic ya obliga, pero chequeamos DB)
+    def create_incidente(self, incidente_in: IncidenteCreate, creador_persona_id: Optional[int] = None) -> models.Incidente:
+        # validar estudiantes
         estudiantes = self.repo.get_estudiantes_by_ids(incidente_in.id_estudiantes)
-        if len(estudiantes) < 1:
+        if not estudiantes or len(estudiantes) < 1:
             raise ValueError("No se encontraron estudiantes válidos")
+
+        # validar situaciones
         situaciones = self.repo.get_situaciones_by_ids(incidente_in.id_situaciones)
-        if len(situaciones) < 1:
+        if not situaciones or len(situaciones) < 1:
             raise ValueError("No se encontraron situaciones válidas")
 
-        incidente = models_incidentes.Incidente(
-            titulo=incidente_in.titulo,
-            antecedentes=antecedentes_text or None,
-            acciones_tomadas=acciones_text or None,
-            seguimiento=incidente_in.seguimiento,
-            estado=incidente_in.estado or "provisional",
-            creado_por=creado_por_persona_id
-            # fecha se asigna por default en el modelo
+        incidente = models.Incidente(
+            fecha = datetime.utcnow(),
+            antecedentes = incidente_in.antecedentes,
+            acciones_tomadas = incidente_in.acciones_tomadas,
+            seguimiento = incidente_in.seguimiento,
+            estado = "provisional"
         )
 
         incidente.estudiantes = estudiantes
         incidente.situaciones = situaciones
 
-        return self.repo.add(incidente)
+        # guardar incidente primero
+        creado = self.repo.add(incidente)
+
+        # luego registrar en historial_de_modificaciones la creación
+        valor_nuevo = json.dumps({
+            "antecedentes": incidente_in.antecedentes,
+            "acciones_tomadas": incidente_in.acciones_tomadas,
+            "seguimiento": incidente_in.seguimiento,
+            "id_estudiantes": incidente_in.id_estudiantes,
+            "id_situaciones": incidente_in.id_situaciones
+        }, ensure_ascii=False)
+
+        try:
+            self.repo.create_historial(
+                id_incidente=creado.id_incidente,
+                id_persona=creador_persona_id,
+                campo_modificado="creacion",
+                valor_anterior=None,
+                valor_nuevo=valor_nuevo
+            )
+        except Exception:
+            # si falla el historial, no revertimos el incidente; opcional: registrar/loggear
+            pass
+
+        return creado
 
     def upload_adjunto(self, id_incidente: int, nombre_archivo: str, ruta: str, tipo_mime: Optional[str] = None, subido_por: Optional[int] = None):
         inc = self.repo.get(id_incidente)

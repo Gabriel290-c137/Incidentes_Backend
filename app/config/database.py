@@ -21,24 +21,19 @@
         
 #         print("🔄 Base de datos reseteada correctamente")
 
+# app/config/database.py
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# lee DATABASE_URL desde .env si lo tienes, sino cae al valor por defecto
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "mysql+pymysql://root:@127.0.0.1:3306/bienestar_estudiantil_",
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:@127.0.0.1:3306/bienestar_estudiantil_")
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-
 def create_db_and_tables():
     Base.metadata.create_all(bind=engine)
-
 
 def get_session():
     db = SessionLocal()
