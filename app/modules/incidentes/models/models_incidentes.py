@@ -32,7 +32,7 @@ class Incidente(Base):
     antecedentes = Column(Text, nullable=True)
     acciones_tomadas = Column(Text, nullable=True)
     seguimiento = Column(Text, nullable=True)
-    estado = Column(String(20), nullable=False, default="provisional")
+    estado = Column(String(20), nullable=False, default="abierto")
     # quitamos creado_por (ya no está en la tabla)
 
     estudiantes = relationship("Estudiante", secondary=incidentes_estudiantes, back_populates="incidentes")

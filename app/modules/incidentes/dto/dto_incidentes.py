@@ -53,3 +53,14 @@ class IncidenteRead(BaseModel):
     # ya no existe creado_por en la tabla; si quieres devolver quien creó, puedes leer historial.
     class Config:
         orm_mode = True
+
+class IncidenteUpdate(BaseModel):
+    antecedentes: Optional[str] = None
+    acciones_tomadas: Optional[str] = None
+    seguimiento: Optional[str] = None
+    id_estudiantes: Optional[List[int]] = None
+    id_situaciones: Optional[List[int]] = None
+    estado: Optional[str] = None  # ← NUEVO
+
+    class Config:
+        orm_mode = True

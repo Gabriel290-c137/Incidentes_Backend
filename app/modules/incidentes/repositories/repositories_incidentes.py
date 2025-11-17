@@ -47,3 +47,7 @@ class IncidenteRepository:
         self.db.commit()
         self.db.refresh(h)
         return h
+
+
+    def get_all(self) -> List[Incidente]:
+        return self.db.query(Incidente).order_by(Incidente.fecha.desc()).all()
